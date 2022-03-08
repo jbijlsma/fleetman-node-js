@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: position-tracker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: position-tracker
+  template:
+    metadata:
+      labels:
+        app: position-tracker
+    spec:
+      containers:
+        - name: position-tracker
+          image: localhost:5001/fleetman-node-position-tracker
+          # resources:
+          #   limits:
+          #     memory: "128Mi"
+          #     cpu: "500m"
+          ports:
+            - containerPort: 8080

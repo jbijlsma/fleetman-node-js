@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: position-tracker-service
+spec:
+  type: ClusterIP
+  selector:
+    app: position-tracker
+  ports:
+    - port: 8080
+      targetPort: 8080

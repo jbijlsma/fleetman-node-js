@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: position-simulator
+spec:
+  selector:
+    matchLabels:
+      app: position-simulator
+  template:
+    metadata:
+      labels:
+        app: position-simulator
+    spec:
+      containers:
+        - name: position-simulator
+          image: localhost:5001/fleetman-node-position-simulator
+          # resources:
+          #   limits:
+          #     memory: "128Mi"
+          #     cpu: "500m"
+          ports:
+            - containerPort: 9002
