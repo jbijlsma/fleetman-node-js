@@ -21,9 +21,11 @@ const Vehicles = ({
   };
 
   const vehicleRows = vehicles.map((vehicle) => {
-    const restartButton = vehicle.hasStopped ? (
+    const kmsLeft = vehicle.hasStopped ? (
       <button onClick={() => restarted(vehicle)}>Restart</button>
-    ) : null;
+    ) : (
+      `${vehicle.kmsLeft.toFixed(1)} (${vehicle.totalDistance.toFixed(0)})`
+    );
 
     return (
       <tr
@@ -36,7 +38,7 @@ const Vehicles = ({
           {vehicle.driverName}
         </th>
         <td>{vehicle.speed}</td>
-        <td>{restartButton}</td>
+        <td>{kmsLeft}</td>
       </tr>
     );
   });

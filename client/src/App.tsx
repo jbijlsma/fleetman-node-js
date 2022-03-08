@@ -22,9 +22,15 @@ function App() {
   ): Vehicle[] => {
     const updatedVehicles = prev.map(
       (v) =>
-        new Vehicle(v.driverName, v.speed, v.hasStopped, v.color, [
-          ...v.positions,
-        ])
+        new Vehicle(
+          v.driverName,
+          v.speed,
+          v.totalDistance,
+          v.kmsLeft,
+          v.hasStopped,
+          v.color,
+          [...v.positions]
+        )
     );
 
     const vehicle = updatedVehicles.find(
@@ -32,6 +38,7 @@ function App() {
     );
     if (vehicle) {
       vehicle.speed = vehicleUpdate.speed;
+      vehicle.kmsLeft = vehicleUpdate.kmsLeft;
       vehicle.hasStopped = vehicleUpdate.hasStopped;
       vehicle.positions = replacePositions
         ? vehicleUpdate.positions
@@ -41,6 +48,8 @@ function App() {
         new Vehicle(
           vehicleUpdate.driverName,
           vehicleUpdate.speed,
+          vehicleUpdate.totalDistance,
+          vehicleUpdate.kmsLeft,
           vehicleUpdate.hasStopped,
           vehicleUpdate.color,
           vehicleUpdate.positions
@@ -73,15 +82,15 @@ function App() {
   }, []);
 
   const restartedHandler = async (vehicle: Vehicle) => {
-    console.log("Restarting");
-    await fetch(
-      `https://fleetman-node.dotnet-works.com/api/vehicles/${vehicle.driverName}/restart`
-    );
-
-    const vehicleUpdate = { ...vehicle, positions: [vehicle.positions[0]] };
+    const lastPosition = vehicle.positions[vehicle.positions.length - 1];
+    const vehicleUpdate = { ...vehicle, positions: [lastPosition] };
     setVehicles((prev) => {
       return updateVehicle(prev, vehicleUpdate, true);
     });
+
+    await fetch(
+      `https://fleetman-node.dotnet-works.com/api/vehicles/${vehicle.driverName}/restart?origin=${lastPosition[0]},${lastPosition[1]}`
+    );
   };
 
   return (

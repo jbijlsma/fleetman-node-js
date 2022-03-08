@@ -48,11 +48,25 @@
     return c * r;
   };
 
-  const getHourlySpeed = (secondsTravelled, distanceTravelled) => {
-    return Math.round((distanceTravelled / secondsTravelled) * 60 * 60, 1);
+  const convertStringToCoordinate = (coordinateString) => {
+    if (!coordinateString) return null;
+    const coordinates = coordinateString.split(",");
+
+    if (coordinates.length !== 2) return null;
+
+    return coordinates.map((coordinate) => parseFloat(coordinate.trim()));
   };
 
-  const startSendingTestVehicleUpdates = (driverName, reverse) => {
+  const areCoordinatesEqual = (a, b) => {
+    if (a === null && b === null) return true;
+    if (a === null || b === null) return false;
+    if (a.length !== b.length) return false;
+    if (a.length !== 2) return false;
+
+    return a[0] === b[0] && a[1] === b[1];
+  };
+
+  const startSendingTestVehicleUpdates = (driverName, origin) => {
     const color = driverColors[driverName];
     const speedInKmH = driverSpeeds[driverName];
     const allPoints = require(`./data/${driverName}_route.json`);
@@ -66,31 +80,36 @@
     const numberOfPointsToSendPerTick = Math.ceil(
       (distanceTravelledInOneTick / totalDistance) * totalNumberOfPoints
     );
-    const reverseFlag = reverse ? -1 : 1;
+
+    if (areCoordinatesEqual(origin, endPoint)) {
+      allPoints.reverse();
+    }
 
     let tick = 0;
     const interval = setIntervalAsync(async () => {
       const start = Math.min(
         totalNumberOfPoints - 1,
-        Math.max(0, tick * numberOfPointsToSendPerTick * reverseFlag)
+        Math.max(0, tick * numberOfPointsToSendPerTick)
       );
       const end = Math.min(
-        totalNumberOfPoints - 1,
-        Math.max(start + numberOfPointsToSendPerTick * reverseFlag, 0)
+        totalNumberOfPoints,
+        Math.max(start + numberOfPointsToSendPerTick, 0)
       );
+
+      const kmsLeft =
+        ((totalNumberOfPoints - end) / totalNumberOfPoints) * totalDistance;
 
       const pointsToSend = allPoints.slice(start, end);
 
-      const lastPointSent = end === 0 || end === totalNumberOfPoints - 1;
+      const lastPointSent = end === 0 || end === totalNumberOfPoints;
 
       const msg = JSON.stringify({
         driverName: driverName,
         color: color,
         speed: speedInKmH,
+        totalDistance: totalDistance,
+        kmsLeft: kmsLeft,
         positions: pointsToSend,
-        numberOfPointsToSendPerTick: numberOfPointsToSendPerTick,
-        start: start,
-        end: end,
         hasStopped: lastPointSent,
       });
 
@@ -125,9 +144,12 @@
     res.send(routeData);
   });
 
+  // ?origin=lat.xx,long.xx
   app.get("/vehicles/:name/restart", async (req, res) => {
     const name = req.params.name;
-    startSendingTestVehicleUpdates(name, false);
+    const origin = convertStringToCoordinate(req.query.origin);
+    console.log(origin);
+    startSendingTestVehicleUpdates(name, origin);
     res.send();
   });
 
@@ -137,7 +159,7 @@
 
   app.listen(PORT, () => {
     console.log(`Server listening on port: ${PORT}`);
-    startSendingTestVehicleUpdates("jfb", false);
-    startSendingTestVehicleUpdates("ybw", false);
+    startSendingTestVehicleUpdates("jfb", null);
+    startSendingTestVehicleUpdates("ybw", null);
   });
 })();
