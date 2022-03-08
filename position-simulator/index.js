@@ -1,12 +1,20 @@
 (async () => {
   const express = require("express");
   const axios = require("axios");
-  const { setIntervalAsync } = require("set-interval-async/dynamic");
+  const {
+    setIntervalAsync,
+    clearIntervalAsync,
+  } = require("set-interval-async/dynamic");
 
   const { decode } = require("@googlemaps/polyline-codec");
 
   const app = express();
+
   const PORT = 9002;
+
+  const driverColors = { jfb: "blue", ybw: "red" };
+  const driverSpeeds = { jfb: 50, ybw: 100 };
+  let SPEEDUP_FACTOR = 20;
 
   const redis = require("redis");
 
@@ -44,55 +52,57 @@
     return Math.round((distanceTravelled / secondsTravelled) * 60 * 60, 1);
   };
 
-  const startSendingTestVehicleUpdates = (
-    driverName,
-    color,
-    updateIntervalInMs
-  ) => {
-    const routePoints = require(`./data/${driverName}_route.json`);
-    const numberOfRoutePoints = routePoints.length;
-    let startPoint = routePoints[0];
-    let endPoint = routePoints[numberOfRoutePoints - 1];
+  const startSendingTestVehicleUpdates = (driverName, reverse) => {
+    const color = driverColors[driverName];
+    const speedInKmH = driverSpeeds[driverName];
+    const allPoints = require(`./data/${driverName}_route.json`);
+    const totalNumberOfPoints = allPoints.length;
+    let startPoint = allPoints[0];
+    let endPoint = allPoints[totalNumberOfPoints - 1];
+    const totalDistance = getDistanceInKm(startPoint, endPoint);
+    const distanceTravelledInOneSecond = speedInKmH / 3600;
+    const distanceTravelledInOneTick =
+      distanceTravelledInOneSecond * SPEEDUP_FACTOR;
+    const numberOfPointsToSendPerTick = Math.ceil(
+      (distanceTravelledInOneTick / totalDistance) * totalNumberOfPoints
+    );
+    const reverseFlag = reverse ? -1 : 1;
 
-    console.log("startSendingTestVehicleUpdates");
+    let tick = 0;
+    const interval = setIntervalAsync(async () => {
+      const start = Math.min(
+        totalNumberOfPoints - 1,
+        Math.max(0, tick * numberOfPointsToSendPerTick * reverseFlag)
+      );
+      const end = Math.min(
+        totalNumberOfPoints - 1,
+        Math.max(start + numberOfPointsToSendPerTick * reverseFlag, 0)
+      );
 
-    let currentRoutePoint = 0;
-    let step = 1;
-    let secondsTravelled = 0;
+      const pointsToSend = allPoints.slice(start, end);
 
-    setIntervalAsync(async () => {
-      const currentPosition = routePoints[currentRoutePoint];
-      const distanceTravelled = getDistanceInKm(startPoint, currentPosition);
-      const speedInKm = getHourlySpeed(secondsTravelled, distanceTravelled);
-      const distanceToEndpoint = getDistanceInKm(currentPosition, endPoint);
+      const lastPointSent = end === 0 || end === totalNumberOfPoints - 1;
 
       const msg = JSON.stringify({
         driverName: driverName,
         color: color,
-        speed: speedInKm,
-        distanceToEndpoint: distanceToEndpoint,
-        position: currentPosition,
-        currentRoutePoint: currentRoutePoint,
+        speed: speedInKmH,
+        positions: pointsToSend,
+        numberOfPointsToSendPerTick: numberOfPointsToSendPerTick,
+        start: start,
+        end: end,
+        hasStopped: lastPointSent,
       });
 
       await publisher.publish(POSITIONS_CHANNEL, msg);
 
-      currentRoutePoint = currentRoutePoint + step;
-      secondsTravelled++;
+      if (lastPointSent) {
+        console.log("Ending timer");
+        clearIntervalAsync(interval);
+      }
 
-      if (currentRoutePoint >= numberOfRoutePoints - 1) {
-        step = -1;
-        startPoint = routePoints[numberOfRoutePoints - 1];
-        endPoint = routePoints[0];
-        secondsTravelled = 0;
-      }
-      if (currentRoutePoint <= 0) {
-        step = 1;
-        startPoint = routePoints[0];
-        endPoint = routePoints[numberOfRoutePoints - 1];
-        secondsTravelled = 0;
-      }
-    }, updateIntervalInMs);
+      tick++;
+    }, 1000);
   };
 
   // ?origin=lat.xx,long.xx&destination=lat.xx,long.xx
@@ -115,13 +125,19 @@
     res.send(routeData);
   });
 
+  app.get("/vehicles/:name/restart", async (req, res) => {
+    const name = req.params.name;
+    startSendingTestVehicleUpdates(name, false);
+    res.send();
+  });
+
   app.get("/", (req, res) => {
     res.send("Position-simulator is running");
   });
 
   app.listen(PORT, () => {
     console.log(`Server listening on port: ${PORT}`);
-    startSendingTestVehicleUpdates("jfb", "blue", 500);
-    startSendingTestVehicleUpdates("ybw", "red", 100);
+    startSendingTestVehicleUpdates("jfb", false);
+    startSendingTestVehicleUpdates("ybw", false);
   });
 })();

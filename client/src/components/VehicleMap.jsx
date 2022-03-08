@@ -59,7 +59,7 @@ const VehicleMap = (props) => {
   };
 
   useEffect(() => {
-    updateMap(() => numberOfPositionUpdatesSelectedVehicle % 15 === 0);
+    updateMap(() => numberOfPositionUpdatesSelectedVehicle % 5 === 0);
   }, [props.vehicles]);
 
   useEffect(() => {
