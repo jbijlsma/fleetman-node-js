@@ -15,6 +15,9 @@ function App() {
     null
   );
 
+  const allowedSpeeds = [1, 2, 5, 10, 20, 60];
+  const [currentSpeed, setCurrentSpeed] = useState(20);
+
   const updateVehicle = (
     prev: Vehicle[],
     vehicleUpdate: Vehicle,
@@ -93,9 +96,41 @@ function App() {
     );
   };
 
+  const updateSimulationSpeed = async (newSpeedIndex: number) => {
+    if (newSpeedIndex >= 0 && newSpeedIndex < allowedSpeeds.length) {
+      const newSpeed = allowedSpeeds[newSpeedIndex];
+
+      await fetch(
+        `https://fleetman-node.dotnet-works.com/api/simulation/speed/${newSpeed}`,
+        {
+          method: "POST",
+        }
+      );
+
+      setCurrentSpeed(newSpeed);
+    }
+  };
+
+  const increaseSimulationSpeed = async () => {
+    const currentSpeedIndex = allowedSpeeds.indexOf(currentSpeed);
+    await updateSimulationSpeed(currentSpeedIndex + 1);
+  };
+
+  const decreaseSimulationSpeed = async () => {
+    const currentSpeedIndex = allowedSpeeds.indexOf(currentSpeed);
+    await updateSimulationSpeed(currentSpeedIndex - 1);
+  };
+
   return (
     <div className="page-wrap">
       <Header />
+      <nav className="page-nav">
+        <div className="simulation-speed">
+          <span>Simulation speed: {currentSpeed}x</span>
+          <button onClick={() => increaseSimulationSpeed()}>+</button>
+          <button onClick={() => decreaseSimulationSpeed()}>-</button>
+        </div>
+      </nav>
       <main className="page-main">
         <VehicleMap
           selectedDriverName={selectedDriverName}

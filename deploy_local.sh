@@ -23,3 +23,4 @@ kubectl apply -f ./k8s -n $RELEASE_NAME
 kubectl rollout restart "deployment/client" -n $RELEASE_NAME
 kubectl rollout restart "deployment/position-tracker" -n $RELEASE_NAME
 kubectl rollout restart "deployment/position-simulator" -n $RELEASE_NAME
+kubectl rollout restart "deployment/redis" -n $RELEASE_NAME

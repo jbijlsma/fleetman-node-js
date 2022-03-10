@@ -14,7 +14,7 @@
 
   const driverColors = { jfb: "blue", ybw: "red" };
   const driverSpeeds = { jfb: 50, ybw: 100 };
-  let SPEEDUP_FACTOR = 20;
+  let SIMULATION_SPEED = 20;
 
   const redis = require("redis");
 
@@ -67,6 +67,8 @@
   };
 
   const startSendingTestVehicleUpdates = (driverName, origin) => {
+    console.log(`setIntervalAsync: ${driverName}`);
+
     const color = driverColors[driverName];
     const speedInKmH = driverSpeeds[driverName];
     const allPoints = require(`./data/${driverName}_route.json`);
@@ -75,31 +77,35 @@
     let endPoint = allPoints[totalNumberOfPoints - 1];
     const totalDistance = getDistanceInKm(startPoint, endPoint);
     const distanceTravelledInOneSecond = speedInKmH / 3600;
-    const distanceTravelledInOneTick =
-      distanceTravelledInOneSecond * SPEEDUP_FACTOR;
-    const numberOfPointsToSendPerTick = Math.ceil(
-      (distanceTravelledInOneTick / totalDistance) * totalNumberOfPoints
-    );
 
     if (areCoordinatesEqual(origin, endPoint)) {
       allPoints.reverse();
     }
 
     let tick = 0;
+    let end = 0;
+
     const interval = setIntervalAsync(async () => {
-      const start = Math.min(
-        totalNumberOfPoints - 1,
-        Math.max(0, tick * numberOfPointsToSendPerTick)
+      const distanceTravelledInOneTick =
+        distanceTravelledInOneSecond * SIMULATION_SPEED;
+      const numberOfPointsToSendPerTick = Math.ceil(
+        (distanceTravelledInOneTick / totalDistance) * totalNumberOfPoints
       );
-      const end = Math.min(
+
+      const start = Math.min(totalNumberOfPoints - 1, Math.max(0, end));
+      end = Math.min(
         totalNumberOfPoints,
         Math.max(start + numberOfPointsToSendPerTick, 0)
       );
 
+      const pointsToSend = allPoints.slice(start, end);
+
+      console.log(
+        `tick: ${tick} - ${driverName} - sending points (${start} until ${end})`
+      );
+
       const kmsLeft =
         ((totalNumberOfPoints - end) / totalNumberOfPoints) * totalDistance;
-
-      const pointsToSend = allPoints.slice(start, end);
 
       const lastPointSent = end === 0 || end === totalNumberOfPoints;
 
@@ -150,6 +156,21 @@
     const origin = convertStringToCoordinate(req.query.origin);
     console.log(origin);
     startSendingTestVehicleUpdates(name, origin);
+    res.send();
+  });
+
+  app.get("/simulation/settings", async (_, res) => {
+    res.send({
+      simulationSpeed: SIMULATION_SPEED,
+    });
+  });
+
+  app.post("/simulation/speed/:speed", async (req, res) => {
+    const speed = req.params.speed;
+    console.log(speed);
+
+    SIMULATION_SPEED = speed;
+
     res.send();
   });
 

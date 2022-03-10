@@ -46,8 +46,20 @@ body {
   background: #e1bee7;
 }
 
+.page-nav {
+  grid-column: 2 / 3;
+  background: #bbdefb;
+}
+
 .page-main {
   grid-column: 2/3;
-  grid-row: 2/4;
   background: #dcedc8;
+}
+
+.simulation-speed {
+  text-align: left;
+}
+
+.simulation-speed button {
+  margin-left: 5px;
 }
