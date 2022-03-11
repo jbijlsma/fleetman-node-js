@@ -68,8 +68,6 @@
   };
 
   const startSendingTestVehicleUpdates = (driverName, origin) => {
-    console.log(`setIntervalAsync: ${driverName}`);
-
     publisher.rPush(
       DRIVER_QUEUE,
       JSON.stringify({
@@ -109,10 +107,6 @@
 
       const pointsToSend = allPoints.slice(start, end);
 
-      console.log(
-        `tick: ${tick} - ${driverName} - sending points (${start} until ${end})`
-      );
-
       const kmsLeft =
         ((totalNumberOfPoints - end) / totalNumberOfPoints) * totalDistance;
 
@@ -138,7 +132,6 @@
       );
 
       if (lastPointSent) {
-        console.log("Ending timer");
         clearIntervalAsync(interval);
       }
 
@@ -170,7 +163,6 @@
   app.get("/vehicles/:name/restart", (req, res) => {
     const name = req.params.name;
     const origin = convertStringToCoordinate(req.query.origin);
-    console.log(origin);
     startSendingTestVehicleUpdates(name, origin);
     res.send();
   });
@@ -183,10 +175,7 @@
 
   app.post("/simulation/speed/:speed", async (req, res) => {
     const speed = req.params.speed;
-    console.log(speed);
-
     SIMULATION_SPEED = speed;
-
     res.send();
   });
 

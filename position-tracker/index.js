@@ -26,14 +26,8 @@
     const msg = JSON.parse(await redisClient.lPop([DRIVER_QUEUE]));
     if (msg) {
       if (msg.type === "RouteStarted") {
-        console.log(`Driver started route: ${msg.driverName}`);
         redisClient.del(getDriverPositionsStorageKey(msg.driverName));
       } else {
-        console.log(
-          `Driver position update: ${msg.data.driverName} -> ${JSON.stringify(
-            msg.data.positions
-          )}`
-        );
         redisClient.rPush(
           getDriverPositionsStorageKey(msg.data.driverName),
           JSON.stringify({
@@ -76,7 +70,7 @@
       .slice(0, untilTick)
       .map((tickPositions) => JSON.parse(tickPositions).positions)
       .reduce((prev, cur) => prev.concat([...cur]), []);
-    // console.log(positionsToSend);
+
     res.send(positionsToSend);
   });
 
