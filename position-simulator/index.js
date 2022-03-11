@@ -18,7 +18,8 @@
 
   const redis = require("redis");
 
-  const POSITIONS_CHANNEL = "ws:vehicle-positions";
+  const DRIVER_QUEUE = "driver-queue";
+
   const publisher = redis.createClient({ url: "redis://redis-service:6379" });
   await publisher.connect();
 
@@ -69,6 +70,14 @@
   const startSendingTestVehicleUpdates = (driverName, origin) => {
     console.log(`setIntervalAsync: ${driverName}`);
 
+    publisher.rPush(
+      DRIVER_QUEUE,
+      JSON.stringify({
+        type: "RouteStarted",
+        driverName: driverName,
+      })
+    );
+
     const color = driverColors[driverName];
     const speedInKmH = driverSpeeds[driverName];
     const allPoints = require(`./data/${driverName}_route.json`);
@@ -109,17 +118,24 @@
 
       const lastPointSent = end === 0 || end === totalNumberOfPoints;
 
-      const msg = JSON.stringify({
+      const msg = {
         driverName: driverName,
+        tick: tick,
         color: color,
         speed: speedInKmH,
         totalDistance: totalDistance,
         kmsLeft: kmsLeft,
         positions: pointsToSend,
         hasStopped: lastPointSent,
-      });
+      };
 
-      await publisher.publish(POSITIONS_CHANNEL, msg);
+      await publisher.rPush(
+        DRIVER_QUEUE,
+        JSON.stringify({
+          type: "PositionUpdate",
+          data: msg,
+        })
+      );
 
       if (lastPointSent) {
         console.log("Ending timer");
@@ -151,7 +167,7 @@
   });
 
   // ?origin=lat.xx,long.xx
-  app.get("/vehicles/:name/restart", async (req, res) => {
+  app.get("/vehicles/:name/restart", (req, res) => {
     const name = req.params.name;
     const origin = convertStringToCoordinate(req.query.origin);
     console.log(origin);

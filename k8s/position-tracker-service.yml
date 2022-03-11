@@ -7,5 +7,9 @@ spec:
   selector:
     app: position-tracker
   ports:
-    - port: 8080
+    - name: ws
+      port: 8080
       targetPort: 8080
+    - name: api
+      port: 9001
+      targetPort: 9001

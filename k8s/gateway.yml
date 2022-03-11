@@ -20,6 +20,16 @@ spec:
             host: position-tracker-service
     - match:
         - uri:
+            prefix: /position-tracker/
+      rewrite:
+        uri: "/"
+      route:
+        - destination:
+            port:
+              number: 9001
+            host: position-tracker-service
+    - match:
+        - uri:
             prefix: /api/
       rewrite:
         uri: "/"
