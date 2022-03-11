@@ -1,5 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { w3cwebsocket as W3CWebSocket } from "websocket";
+
+import { useAppSelector, useAppDispatch } from "./store/hooks";
+import {
+  increaseSimulationSpeedAsync,
+  decreaseSimulationSpeedAsync,
+  updateVehicleAsync,
+  VehicleUpdate,
+} from "./store/index";
 
 import Header from "./components/Header";
 import Vehicles from "./components/Vehicles";
@@ -7,61 +15,12 @@ import Vehicles from "./components/Vehicles";
 import VehicleMap from "./components/VehicleMap";
 
 import "./App.css";
-import { Vehicle } from "./models/Vehicle";
 
 function App() {
-  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-  const [selectedDriverName, setSelectedDriverName] = useState<string | null>(
-    null
+  const simulationSpeed = useAppSelector(
+    (state) => state.simulationReducer.simulationSpeed
   );
-
-  const allowedSpeeds = [1, 2, 5, 10, 20, 60];
-  const [currentSpeed, setCurrentSpeed] = useState(20);
-
-  const updateVehicle = (
-    prev: Vehicle[],
-    vehicleUpdate: Vehicle,
-    replacePositions: boolean
-  ): Vehicle[] => {
-    const updatedVehicles = prev.map(
-      (v) =>
-        new Vehicle(
-          v.driverName,
-          v.speed,
-          v.totalDistance,
-          v.kmsLeft,
-          v.hasStopped,
-          v.color,
-          [...v.positions]
-        )
-    );
-
-    const vehicle = updatedVehicles.find(
-      (v) => v.driverName === vehicleUpdate.driverName
-    );
-    if (vehicle) {
-      vehicle.speed = vehicleUpdate.speed;
-      vehicle.kmsLeft = vehicleUpdate.kmsLeft;
-      vehicle.hasStopped = vehicleUpdate.hasStopped;
-      vehicle.positions = replacePositions
-        ? vehicleUpdate.positions
-        : vehicle.positions.concat(vehicleUpdate.positions);
-    } else {
-      updatedVehicles.push(
-        new Vehicle(
-          vehicleUpdate.driverName,
-          vehicleUpdate.speed,
-          vehicleUpdate.totalDistance,
-          vehicleUpdate.kmsLeft,
-          vehicleUpdate.hasStopped,
-          vehicleUpdate.color,
-          vehicleUpdate.positions
-        )
-      );
-    }
-
-    return updatedVehicles;
-  };
+  const dispatch = useAppDispatch();
 
   useEffect(() => {
     const uuid = (Math.random() + 1).toString(36).substring(7);
@@ -73,78 +32,39 @@ function App() {
     client.onopen = () => {
       console.log("WebSocket Client Connected");
     };
-    client.onmessage = (message) => {
-      const vehicleUpdate = JSON.parse(message.data as string);
-
-      setSelectedDriverName((prev) => (prev ? prev : vehicleUpdate.driverName));
-
-      setVehicles((prev) => {
-        return updateVehicle(prev, vehicleUpdate, false);
-      });
+    client.onmessage = (msg) => {
+      const vehicleUpdate = JSON.parse(msg.data as string) as VehicleUpdate;
+      dispatch(updateVehicleAsync(vehicleUpdate));
     };
   }, []);
-
-  const restartedHandler = async (vehicle: Vehicle) => {
-    const lastPosition = vehicle.positions[vehicle.positions.length - 1];
-    const vehicleUpdate = { ...vehicle, positions: [lastPosition] };
-    setVehicles((prev) => {
-      return updateVehicle(prev, vehicleUpdate, true);
-    });
-
-    await fetch(
-      `https://fleetman-node.dotnet-works.com/api/vehicles/${vehicle.driverName}/restart?origin=${lastPosition[0]},${lastPosition[1]}`
-    );
-  };
-
-  const updateSimulationSpeed = async (newSpeedIndex: number) => {
-    if (newSpeedIndex >= 0 && newSpeedIndex < allowedSpeeds.length) {
-      const newSpeed = allowedSpeeds[newSpeedIndex];
-
-      await fetch(
-        `https://fleetman-node.dotnet-works.com/api/simulation/speed/${newSpeed}`,
-        {
-          method: "POST",
-        }
-      );
-
-      setCurrentSpeed(newSpeed);
-    }
-  };
-
-  const increaseSimulationSpeed = async () => {
-    const currentSpeedIndex = allowedSpeeds.indexOf(currentSpeed);
-    await updateSimulationSpeed(currentSpeedIndex + 1);
-  };
-
-  const decreaseSimulationSpeed = async () => {
-    const currentSpeedIndex = allowedSpeeds.indexOf(currentSpeed);
-    await updateSimulationSpeed(currentSpeedIndex - 1);
-  };
 
   return (
     <div className="page-wrap">
       <Header />
       <nav className="page-nav">
         <div className="simulation-speed">
-          <span>Simulation speed: {currentSpeed}x</span>
-          <button onClick={() => increaseSimulationSpeed()}>+</button>
-          <button onClick={() => decreaseSimulationSpeed()}>-</button>
+          <span>Simulation speed: {simulationSpeed}x</span>
+          <button
+            onClick={() => {
+              dispatch(increaseSimulationSpeedAsync());
+            }}
+          >
+            +
+          </button>
+          <button
+            onClick={() => {
+              dispatch(decreaseSimulationSpeedAsync());
+            }}
+          >
+            -
+          </button>
         </div>
       </nav>
       <main className="page-main">
-        <VehicleMap
-          selectedDriverName={selectedDriverName}
-          vehicles={vehicles}
-        />
+        <VehicleMap />
       </main>
       <aside className="page-sidebar">
-        <Vehicles
-          vehicles={vehicles}
-          restarted={restartedHandler}
-          driverSelected={(driverName: string) => {
-            setSelectedDriverName(driverName);
-          }}
-        />
+        <Vehicles />
       </aside>
     </div>
   );

@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useState, useEffect } from "react";
 import {
   MapContainer,
   TileLayer,
@@ -7,6 +7,8 @@ import {
   Polyline,
 } from "react-leaflet";
 import L from "leaflet";
+
+import { useAppSelector } from "../store/hooks";
 
 import redCarIcon from "../assets/car-red-32.png";
 import blueCarIcon from "../assets/car-blue-32.png";
@@ -35,20 +37,24 @@ const getMarkerIcon = (color) => {
   });
 };
 
-const VehicleMap = (props) => {
+const VehicleMap = () => {
+  const vehicles = useAppSelector((state) => state.simulationReducer.vehicles);
+  const selectedDriverName = useAppSelector(
+    (state) => state.simulationReducer.selectedDriverName
+  );
+
   const center = [48.01278, 11.40562];
   const [map, setMap] = useState(null);
 
   const updateMap = (flyToPredicate) => {
-    if (map && props.vehicles) {
-      for (const vehicle of props.vehicles) {
-        if (props.selectedDriverName === vehicle.driverName) {
+    if (map && vehicles) {
+      for (const vehicle of vehicles) {
+        if (selectedDriverName === vehicle.driverName) {
           const lastPosition = vehicle.positions[vehicle.positions.length - 1];
 
           if (flyToPredicate()) {
             map.flyTo(lastPosition, map.getZoom(), {
               animate: false,
-              duration: 1,
             });
           }
 
@@ -60,13 +66,13 @@ const VehicleMap = (props) => {
 
   useEffect(() => {
     updateMap(() => numberOfPositionUpdatesSelectedVehicle % 5 === 0);
-  }, [props.vehicles]);
+  }, [vehicles]);
 
   useEffect(() => {
     updateMap(() => true);
-  }, [props.selectedDriverName]);
+  }, [selectedDriverName]);
 
-  const polyLines = props.vehicles.map((vehicle) => {
+  const polyLines = vehicles.map((vehicle) => {
     return (
       <Polyline
         key={vehicle.driverName}
@@ -78,7 +84,7 @@ const VehicleMap = (props) => {
     );
   });
 
-  const markers = props.vehicles.map((vehicle) => {
+  const markers = vehicles.map((vehicle) => {
     return (
       <Marker
         key={vehicle.driverName}

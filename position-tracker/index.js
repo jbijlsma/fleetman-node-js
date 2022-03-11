@@ -72,8 +72,11 @@
       0,
       -1
     );
-    const positionsToSend = positions.slice(0, untilTick);
-    console.log(positionsToSend);
+    const positionsToSend = positions
+      .slice(0, untilTick)
+      .map((tickPositions) => JSON.parse(tickPositions).positions)
+      .reduce((prev, cur) => prev.concat([...cur]), []);
+    // console.log(positionsToSend);
     res.send(positionsToSend);
   });
 

@@ -1,28 +1,33 @@
 import React from "react";
+import { useAppSelector, useAppDispatch } from "../store/hooks";
+import { updateSelectedDriver, restartRouteAsync } from "../store/index";
 import { Vehicle } from "../models/Vehicle";
 
 import "./Vehicles.css";
 
-const Vehicles = ({
-  vehicles,
-  driverSelected,
-  restarted,
-}: React.PropsWithChildren<{
-  vehicles: Vehicle[];
-  driverSelected: (drivername: string) => void;
-  restarted: (vehicle: Vehicle) => void;
-}>) => {
+const Vehicles = ({}: React.PropsWithChildren<{}>) => {
+  const dispatch = useAppDispatch();
+
+  const vehicles = useAppSelector((state) => state.simulationReducer.vehicles);
+
   const driverSelectedHandler = (
     event: React.MouseEvent,
     driverName: string
   ) => {
     event.preventDefault();
-    driverSelected(driverName);
+    dispatch(updateSelectedDriver(driverName));
+  };
+
+  const restartedHandler = (event: React.MouseEvent, vehicle: Vehicle) => {
+    event.preventDefault();
+    dispatch(restartRouteAsync(vehicle));
   };
 
   const vehicleRows = vehicles.map((vehicle) => {
     const kmsLeft = vehicle.hasStopped ? (
-      <button onClick={() => restarted(vehicle)}>Restart</button>
+      <button onClick={(event) => restartedHandler(event, vehicle)}>
+        Restart
+      </button>
     ) : (
       `${vehicle.kmsLeft.toFixed(1)} (${vehicle.totalDistance.toFixed(0)})`
     );
