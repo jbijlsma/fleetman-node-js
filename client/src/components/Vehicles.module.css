@@ -1,0 +1,11 @@
+.vehicles {
+  border-bottom: 1px solid silver;
+}
+
+.vehicleRow {
+  cursor: pointer;
+}
+
+.vehicleSelected {
+  background-color: #d86deb;
+}

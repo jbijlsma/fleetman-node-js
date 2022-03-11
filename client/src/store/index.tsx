@@ -59,7 +59,7 @@ export const increaseSimulationSpeedAsync = createAsyncThunk(
       return newSpeed;
     }
 
-    return 0;
+    return currentSpeed;
   }
 );
 

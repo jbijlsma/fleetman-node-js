@@ -3,12 +3,15 @@ import { useAppSelector, useAppDispatch } from "../store/hooks";
 import { updateSelectedDriver, restartRouteAsync } from "../store/index";
 import { Vehicle } from "../models/Vehicle";
 
-import "./Vehicles.css";
+import classes from "./Vehicles.module.css";
 
 const Vehicles = ({}: React.PropsWithChildren<{}>) => {
   const dispatch = useAppDispatch();
 
   const vehicles = useAppSelector((state) => state.simulationReducer.vehicles);
+  const selectedDriverName = useAppSelector(
+    (state) => state.simulationReducer.selectedDriverName
+  );
 
   const driverSelectedHandler = (
     event: React.MouseEvent,
@@ -32,11 +35,16 @@ const Vehicles = ({}: React.PropsWithChildren<{}>) => {
       `${vehicle.kmsLeft.toFixed(1)} (${vehicle.totalDistance.toFixed(0)})`
     );
 
+    const trClasses = [classes.vehicleRow];
+    if (vehicle.driverName === selectedDriverName) {
+      trClasses.push(classes.vehicleSelected);
+    }
+
     return (
       <tr
         key={vehicle.driverName}
-        style={{ cursor: "pointer" }}
         onClick={(event) => driverSelectedHandler(event, vehicle.driverName)}
+        className={trClasses.join(" ")}
       >
         <th scope="row">
           <span className="fa fa-truck"></span>
@@ -48,8 +56,16 @@ const Vehicles = ({}: React.PropsWithChildren<{}>) => {
     );
   });
 
+  const tableClasses = [
+    "table",
+    "table-responsive",
+    "table-hover",
+    "table-condensed",
+    classes.vehicles,
+  ];
+
   return (
-    <table className="table table-responsive table-hover table-condensed">
+    <table className={tableClasses.join(" ")}>
       <thead className=".thead-dark">
         <tr>
           <th scope="col">Name</th>
