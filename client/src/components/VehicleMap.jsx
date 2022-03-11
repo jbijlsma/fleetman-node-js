@@ -22,8 +22,6 @@ const carIcons = {
   orange: orangeCarIcon,
 };
 
-let numberOfPositionUpdatesSelectedVehicle = 0;
-
 const tileLayer = {
   attribution:
     '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors',
@@ -46,31 +44,29 @@ const VehicleMap = () => {
   const center = [48.01278, 11.40562];
   const [map, setMap] = useState(null);
 
-  const updateMap = (flyToPredicate) => {
+  const updateMap = () => {
     if (map && vehicles) {
       for (const vehicle of vehicles) {
         if (selectedDriverName === vehicle.driverName) {
           const lastPosition = vehicle.positions[vehicle.positions.length - 1];
 
-          if (flyToPredicate()) {
+          if (
+            !map
+              .getBounds()
+              .contains({ lat: lastPosition[0], lng: lastPosition[1] })
+          ) {
             map.flyTo(lastPosition, map.getZoom(), {
               animate: false,
             });
           }
-
-          numberOfPositionUpdatesSelectedVehicle++;
         }
       }
     }
   };
 
   useEffect(() => {
-    updateMap(() => numberOfPositionUpdatesSelectedVehicle % 5 === 0);
-  }, [vehicles]);
-
-  useEffect(() => {
-    updateMap(() => true);
-  }, [selectedDriverName]);
+    updateMap();
+  }, [vehicles, selectedDriverName]);
 
   const polyLines = vehicles.map((vehicle) => {
     return (
