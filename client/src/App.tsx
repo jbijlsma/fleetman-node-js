@@ -24,10 +24,8 @@ function App() {
 
   useEffect(() => {
     const uuid = (Math.random() + 1).toString(36).substring(7);
-    // const url = window.location.origin.replace("https", "wss");
-    // const wssUrl = `${url}/ws?uuid=${uuid}`;
-    const wssUrl = `wss://fleetman-node.dotnet-works.com/ws?uuid=${uuid}`;
-    console.log(wssUrl);
+    const url = window.location.origin.replace("https", "wss");
+    const wssUrl = `${url}/ws?uuid=${uuid}`;
     const client = new W3CWebSocket(wssUrl);
     client.onopen = () => {
       console.log("WebSocket Client Connected");

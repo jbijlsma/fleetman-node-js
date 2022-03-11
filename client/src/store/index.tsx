@@ -73,12 +73,9 @@ export const decreaseSimulationSpeedAsync = createAsyncThunk(
 
     if (speedIndex > 0) {
       const newSpeed = allowedSpeeds[speedIndex - 1];
-      await fetch(
-        `https://fleetman-node.dotnet-works.com/api/simulation/speed/${newSpeed}`,
-        {
-          method: "POST",
-        }
-      );
+      await fetch(`/api/simulation/speed/${newSpeed}`, {
+        method: "POST",
+      });
       return newSpeed;
     }
 
@@ -92,7 +89,7 @@ export const restartRouteAsync = createAsyncThunk(
     const driverName = vehicle.driverName;
     const lastPosition = vehicle.positions[vehicle.positions.length - 1];
     await fetch(
-      `https://fleetman-node.dotnet-works.com/api/vehicles/${driverName}/restart?origin=${lastPosition[0]},${lastPosition[1]}`
+      `/api/vehicles/${driverName}/restart?origin=${lastPosition[0]},${lastPosition[1]}`
     );
 
     return { driverName: driverName, lastPosition: lastPosition };
@@ -108,7 +105,7 @@ export const updateVehicleAsync = createAsyncThunk(
       vehicles.findIndex((v) => v.driverName === vehicleUpdate.driverName) < 0
     ) {
       const response = await fetch(
-        `https://fleetman-node.dotnet-works.com/position-tracker/${vehicleUpdate.driverName}?untilTick=${vehicleUpdate.tick}`
+        `/position-tracker/${vehicleUpdate.driverName}?untilTick=${vehicleUpdate.tick}`
       );
       const allPositionsForCurrentRoute = await response.json();
       return {
