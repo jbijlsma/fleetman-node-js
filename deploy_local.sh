@@ -17,6 +17,7 @@ docker push $POSITION_SIMULATOR_TAG
 
 # Deploy to k8s cluster
 # helm upgrade "$RELEASE_NAME" ./k8s/helm --install
+kubectl create namespace $RELEASE_NAME
 kubectl apply -f ./k8s -n $RELEASE_NAME
 
 # Restart deployments
