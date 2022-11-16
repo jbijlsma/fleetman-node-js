@@ -1,6 +1,6 @@
 # Intro
 
-This is a rewrite the the fleetman application written by Dick Chesterwood as part of his courses (in this case Istio). The java version does not seem to work on arm64, so I decided to reverse engineer the application using NodeJs.
+This is a rewrite of the fleetman application written by Dick Chesterwood as part of his courses (in this case Istio). The java version does not seem to work on arm64, so I decided to reverse engineer the application using NodeJs.
 
 # Run locally
 
